@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "../ui/button";
 import TableSortedIcon from "./TableSortedIcon";
 import TodoTable from "./TodoTable";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import todoFetchRequest from "@/requests/todoFetchRequest";
 
 const TodoTableManager = () => {
@@ -20,6 +20,7 @@ const TodoTableManager = () => {
   const { data: todos } = useQuery({
     queryKey: ["todos"],
     queryFn: todoFetchRequest,
+    refetchOnMount: true,
   });
   const order = useMemo(() => Object.values(State), []);
 

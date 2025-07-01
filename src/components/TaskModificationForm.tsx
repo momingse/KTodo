@@ -15,7 +15,7 @@ import dayjs from "dayjs";
 import { CalendarIcon, X } from "lucide-react";
 import { FC, lazy } from "react";
 import { Controller, UseFormReturn } from "react-hook-form";
-import { UseMutationResult, useQuery } from "react-query";
+import { UseMutationResult, useQuery } from "@tanstack/react-query";
 import "react-quill/dist/quill.snow.css";
 import CustomizedMultSelect from "./CustomizedMultSelect";
 import CustomizedSelect from "./CustomizedSelect";
@@ -52,20 +52,20 @@ const TaskModificationForm: FC<TaskEditFormProps> = ({
   formFunctionReturn,
 }) => {
   const { md } = useBreakpoint();
-  const { axiosToast } = useToast();
   const {
     handleSubmit,
     register,
     formState: { errors },
     control,
   } = formFunctionReturn;
-  const { mutate: submitEditTodoTask, isLoading } = editMutationFunctionReturn;
+  const { mutate: submitEditTodoTask, isPending: isLoading } = editMutationFunctionReturn;
   const { mutate: deleteFunc } =
     deleteMutationFunctionReturn ?? { mutate: () => {}, isLoading: false };
 
   const { data: labels } = useQuery({
     queryKey: ["labels"],
     queryFn: todoLabelFetchRequest,
+    refetchOnMount: true,
   });
 
   const ErrorMessage = ({ msg }: ErrorMessageProps) => {

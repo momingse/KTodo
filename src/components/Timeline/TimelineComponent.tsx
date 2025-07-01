@@ -5,7 +5,7 @@ import { categorizeDate, getTimeframeSortOrder } from "@/lib/date-util";
 import todoFetchRequest from "@/requests/todoFetchRequest";
 import { Todo } from "@prisma/client";
 import dayjs from "dayjs";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import VerticalTimelineSection from "./VerticalTimelineSection";
 import { VerticalTimelineSkeleton } from "./VerticalTimelineSkeleton";
 
@@ -13,6 +13,7 @@ const TimelineComponent = () => {
   const { data: todos, isLoading } = useQuery({
     queryKey: ["todos"],
     queryFn: todoFetchRequest,
+    refetchOnMount: true,
   });
 
   const groupedTasks =

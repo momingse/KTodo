@@ -12,7 +12,7 @@ import { Todo } from "@prisma/client";
 import axios, { AxiosError } from "axios";
 import { FC } from "react";
 import { useForm } from "react-hook-form";
-import { useMutation, useQueryClient } from "react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import "react-quill/dist/quill.snow.css";
 import TaskModificationForm from "./TaskModificationForm";
 import { useToast } from "./ui/use-toast";

@@ -1,4 +1,4 @@
-import { SideBarActionType, SidebarAction } from "../actions/sidebarAction";
+import { SideBarActionType } from "../actions/sidebarAction";
 
 export interface SidebarState {
   isSidebarOpen: boolean;
@@ -8,8 +8,8 @@ const initialState: SidebarState = {
   isSidebarOpen: false,
 };
 
-const reducer = (state = initialState, action: SidebarAction): SidebarState => {
-  switch (action.type) {
+const reducer = (state = initialState, action: SideBarActionType): SidebarState => {
+  switch (action) {
     case SideBarActionType.OPEN_SIDEBAR:
       return {
         isSidebarOpen: true,

@@ -9,7 +9,7 @@ import todoFetchRequest from "@/requests/todoFetchRequest";
 import { Todo } from "@prisma/client";
 import dayjs from "dayjs";
 import { BarChart, CheckCircle, Circle, Clock } from "lucide-react";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "../ui/skeleton";
 
 //TODO: clock color
@@ -18,6 +18,7 @@ const DashboardComponent = () => {
   const { data: todos, isLoading } = useQuery<Todo[]>({
     queryKey: ["todos"],
     queryFn: todoFetchRequest,
+    refetchOnMount: true,
   });
 
   const lastUpdatedDate =

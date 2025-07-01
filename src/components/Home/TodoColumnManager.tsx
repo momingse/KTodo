@@ -3,17 +3,15 @@
 import { TASK_STATE_OPTIONS } from "@/lib/const";
 import { TodoEditRequest } from "@/lib/validators/todo";
 import todoEditRequest from "@/requests/todoEditRequest";
+import todoFetchRequest from "@/requests/todoFetchRequest";
 import { Todo } from "@prisma/client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
-import { useMutation, useQuery, useQueryClient } from "react-query";
 import DndContextProvider, { OnDragEndEvent } from "../DnDContextProvider";
 import { useToast } from "../ui/use-toast";
-import TodoColumn from "./TodoColumn";
-import todoFetchRequest from "@/requests/todoFetchRequest";
-import { Skeleton } from "../ui/skeleton";
-import { Card, CardContent, CardHeader } from "../ui/card";
 import SkeletonColumn from "./SkeletonColumn";
+import TodoColumn from "./TodoColumn";
 
 const TodoColumnManager = () => {
   const router = useRouter();
@@ -23,6 +21,7 @@ const TodoColumnManager = () => {
   const { data: todos, isLoading } = useQuery<Todo[]>({
     queryKey: ["todos"],
     queryFn: todoFetchRequest,
+    refetchOnMount: true,
   });
 
   const { mutate: handleUpdateState } = useMutation({
