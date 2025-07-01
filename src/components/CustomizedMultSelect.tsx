@@ -37,8 +37,68 @@ const CustomizedMultSelect: FC<CustomizedMultSelectProps> = ({
   const [isNewLabel, setIsNewLabel] = useState(false);
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState<string>("");
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const selectorRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const calculateDropdownPosition = useCallback(() => {
+    if (!selectorRef.current) return;
+
+    const selectorRect = selectorRef.current.getBoundingClientRect();
+    const windowHeight = window.innerHeight;
+    const windowWidth = window.innerWidth;
+
+    // Calculate available space below and above
+    const spaceBelow = windowHeight - selectorRect.bottom;
+    const spaceAbove = selectorRect.top;
+
+    // Minimum dropdown height (for at least 2-3 items)
+    const minDropdownHeight = 120;
+    // Maximum dropdown height
+    const maxDropdownHeight = Math.min(300, Math.max(spaceBelow, spaceAbove) - 20);
+
+    let newStyle: React.CSSProperties = {
+      width: selectorRect.width,
+      left: 0,
+    };
+
+    // Check if dropdown should open upward or downward
+    if (spaceBelow >= minDropdownHeight || spaceBelow >= spaceAbove) {
+      // Open downward
+      newStyle.top = '100%';
+      newStyle.bottom = 'auto';
+      
+      if (spaceBelow < maxDropdownHeight) {
+        newStyle.maxHeight = Math.max(spaceBelow - 10, minDropdownHeight);
+        newStyle.overflowY = 'auto';
+      } else {
+        newStyle.maxHeight = maxDropdownHeight;
+        newStyle.overflowY = 'auto';
+      }
+    } else {
+      // Open upward
+      newStyle.bottom = '100%';
+      newStyle.top = 'auto';
+      
+      if (spaceAbove < maxDropdownHeight) {
+        newStyle.maxHeight = Math.max(spaceAbove - 10, minDropdownHeight);
+        newStyle.overflowY = 'auto';
+      } else {
+        newStyle.maxHeight = maxDropdownHeight;
+        newStyle.overflowY = 'auto';
+      }
+    }
+
+    // Check horizontal overflow
+    const dropdownRight = selectorRect.left + selectorRect.width;
+    if (dropdownRight > windowWidth) {
+      newStyle.right = 0;
+      newStyle.left = 'auto';
+    }
+
+    setDropdownStyle(newStyle);
+  }, []);
 
   const handleOnClose = useCallback(() => {
     setOpen(false);
@@ -46,13 +106,54 @@ const CustomizedMultSelect: FC<CustomizedMultSelectProps> = ({
     resetOptions();
     setIsNewLabel(false);
   }, [resetOptions]);
+
   useClickOutSide(selectorRef, handleOnClose);
   useEsc(handleOnClose);
 
   useEffect(() => {
     if (!open || !searchRef.current) return;
     searchRef.current.focus();
-  }, [open]);
+    // Calculate position after the dropdown is rendered
+    setTimeout(calculateDropdownPosition, 0);
+  }, [open, calculateDropdownPosition]);
+
+  useEffect(() => {
+    if (open) {
+      calculateDropdownPosition();
+      
+      // Recalculate on window resize or scroll
+      const handleResize = () => calculateDropdownPosition();
+      const handleScroll = () => calculateDropdownPosition();
+      
+      window.addEventListener('resize', handleResize);
+      window.addEventListener('scroll', handleScroll, true);
+      
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        window.removeEventListener('scroll', handleScroll, true);
+      };
+    }
+  }, [open, calculateDropdownPosition, privateOptions]);
+
+  // Recalculate position when selected values change (selector height might change)
+  useEffect(() => {
+    if (open) {
+      // Use requestAnimationFrame to ensure DOM has updated after state change
+      requestAnimationFrame(() => {
+        calculateDropdownPosition();
+      });
+    }
+  }, [privateValue, calculateDropdownPosition, open]);
+
+  // Recalculate when options list changes (dropdown content height changes)
+  useEffect(() => {
+    if (open && dropdownRef.current) {
+      // Use requestAnimationFrame to ensure dropdown has rendered with new content
+      requestAnimationFrame(() => {
+        calculateDropdownPosition();
+      });
+    }
+  }, [privateOptions, calculateDropdownPosition, open]);
 
   const handleOpen = () => {
     setOpen((prev) => !prev);
@@ -203,7 +304,11 @@ const CustomizedMultSelect: FC<CustomizedMultSelectProps> = ({
           </div>
         </div>
         {open && privateOptions?.length > 0 && (
-          <div className="absolute bg-white dark:bg-gray-800 my-1 w-full border rounder-md z-50">
+          <div
+            ref={dropdownRef}
+            className="absolute bg-white dark:bg-gray-800 my-1 border rounded-md z-50 shadow-lg"
+            style={dropdownStyle}
+          >
             {privateOptions.map((option) => (
               <div
                 key={option}
