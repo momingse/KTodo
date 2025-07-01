@@ -52,7 +52,6 @@ const TaskModificationForm: FC<TaskEditFormProps> = ({
   formFunctionReturn,
 }) => {
   const { md } = useBreakpoint();
-  const { toast } = useToast();
   const {
     handleSubmit,
     register,
