@@ -165,7 +165,7 @@ const TaskModificationForm: FC<TaskEditFormProps> = ({
         submitEditTodoTask(e);
       })}
     >
-      <Card className="sm:max-h-[80vh] overflow-y-auto">
+      <Card className="sm:max-h-[80vh]">
         <CardHeader>
           <CardTitle className="flex justify-between">
             <div>{title}</div>
