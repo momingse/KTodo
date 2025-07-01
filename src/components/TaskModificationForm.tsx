@@ -52,6 +52,7 @@ const TaskModificationForm: FC<TaskEditFormProps> = ({
   formFunctionReturn,
 }) => {
   const { md } = useBreakpoint();
+  const { toast } = useToast();
   const {
     handleSubmit,
     register,
@@ -205,6 +206,9 @@ const TaskModificationForm: FC<TaskEditFormProps> = ({
                       className="h-80"
                     />
                   )}
+                />
+                <ErrorMessage
+                  msg={errors.description?.message?.toString()}
                 />
               </div>
               <div className="relative flex gap-1 pb-4">

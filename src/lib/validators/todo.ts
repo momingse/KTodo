@@ -3,7 +3,7 @@ import { z } from "zod";
 
 export const TodoCreateValidator = z.object({
   title: z.string().min(1).max(100),
-  description: z.string().max(1000).optional(),
+  description: z.string().max(5000).optional(),
   state: z.nativeEnum(State),
   deadline: z.number().int().positive().optional(),
   label: z.array(z.string().max(100)).optional(),
@@ -12,7 +12,7 @@ export const TodoCreateValidator = z.object({
 export const TodoEditValidator = z.object({
   id: z.string().length(24),
   title: z.string().min(1).max(100).optional(),
-  description: z.string().max(1000).nullable().optional(),
+  description: z.string().max(5000).nullable().optional(),
   state: z.nativeEnum(State).optional(),
   deadline: z.number().int().positive().nullable().optional(),
   label: z.array(z.string().max(100)).optional(),
