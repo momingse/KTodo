@@ -206,6 +206,9 @@ const TaskModificationForm: FC<TaskEditFormProps> = ({
                     />
                   )}
                 />
+                <ErrorMessage
+                  msg={errors.description?.message?.toString()}
+                />
               </div>
               <div className="relative flex gap-1 pb-4">
                 <Button isLoading={isLoading}>Edit Task</Button>
