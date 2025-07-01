@@ -1,7 +1,7 @@
 import { State } from "@prisma/client";
 import { z } from "zod";
 
-const MAX_DESCIPTION_LENGTH = 5000;
+const MAX_DESCRIPTION_LENGTH = 5000;
 
 export const TodoCreateValidator = z.object({
   title: z.string().min(1).max(100),
