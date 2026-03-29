@@ -15,48 +15,55 @@ export async function DELETE(req: NextRequest) {
 
     const { id } = TodoDeleteValidator.parse(body);
 
-    const [record] = await prisma.todo.findMany({
-      where: {
-        id,
-        ownerId: session.user.id,
-        isDeleted: false,
-      },
-    });
-    if (!record) return new Response("Record Not Found", { status: 404 });
-
-    await prisma.todo.update({
-      where: { id },
-      data: {
-        isDeleted: true,
-      },
-    });
-
-    await prisma.todo.updateMany({
-      where: {
-        ownerId: session.user.id,
-        state: record.state,
-        order: { gt: record.order },
-      },
-      data: {
-        order: {
-          decrement: 1,
+    const result = await prisma.$transaction(async (tx) => {
+      const [record] = await tx.todo.findMany({
+        where: {
+          id,
+          ownerId: session.user?.id,
+          isDeleted: false,
         },
-      },
-    });
+      });
+      if (!record) throw new Error("Record Not Found");
 
-    const result = await prisma.todo.findMany({
-      where: {
-        ownerId: session.user.id,
-        isDeleted: false,
-      },
-      orderBy: {
-        order: "asc",
-      },
+      await tx.todo.update({
+        where: { id },
+        data: {
+          isDeleted: true,
+        },
+      });
+
+      await tx.todo.updateMany({
+        where: {
+          ownerId: session.user?.id,
+          state: record.state,
+          order: { gt: record.order },
+        },
+        data: {
+          order: {
+            decrement: 1,
+          },
+        },
+      });
+
+      const finalResult = await tx.todo.findMany({
+        where: {
+          ownerId: session.user?.id,
+          isDeleted: false,
+        },
+        orderBy: {
+          order: "asc",
+        },
+      });
+
+      return finalResult;
     });
 
     return new Response(JSON.stringify(result), { status: 200 });
   } catch (error) {
     logger.error(error);
+    if (error instanceof Error && error.message === "Record Not Found") {
+      return new Response("Record Not Found", { status: 404 });
+    }
     return new Response("Internal Server Error", { status: 500 });
   }
 }
