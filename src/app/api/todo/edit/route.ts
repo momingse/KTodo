@@ -16,135 +16,142 @@ export async function PATCH(req) {
     const { id, title, description, deadline, label, order, state } =
       TodoEditValidator.parse(body);
 
-    const [record] = await prisma.todo.findMany({
-      where: {
-        id,
-        ownerId: session!.user!.id,
-        isDeleted: false,
-      },
-    });
-    if (!record) return new Response("Record Not Found", { status: 404 });
-
-    const isOrderModified =
-      typeof order !== "undefined" &&
-      (record.order !== order || record.state !== state);
-    const changedState = record.state !== state;
-    const isOrderIncreased = order && record.order < order;
-
-    if (!isOrderModified) {
-      await prisma.todo.update({
-        where: { id },
-        data: {
-          title,
-          description,
-          state,
-          deadline,
-          label,
+    const result = await prisma.$transaction(async (tx) => {
+      const [record] = await tx.todo.findMany({
+        where: {
+          id,
+          ownerId: session!.user!.id,
+          isDeleted: false,
         },
       });
-    } else if (changedState) {
-      await prisma.todo.updateMany({
+      if (!record) throw new Error("Record Not Found");
+
+      const isOrderModified =
+        typeof order !== "undefined" &&
+        (record.order !== order || record.state !== state);
+      const changedState = record.state !== state;
+      const isOrderIncreased = order && record.order < order;
+
+      if (!isOrderModified) {
+        await tx.todo.update({
+          where: { id },
+          data: {
+            title,
+            description,
+            state,
+            deadline,
+            label,
+          },
+        });
+      } else if (changedState) {
+        await tx.todo.updateMany({
+          where: {
+            ownerId: session!.user!.id,
+            state: record.state,
+            order: { gt: record.order },
+          },
+          data: {
+            order: {
+              decrement: 1,
+            },
+          },
+        });
+
+        await tx.todo.updateMany({
+          where: {
+            ownerId: session!.user!.id,
+            state,
+            order: { gte: order },
+          },
+          data: {
+            order: {
+              increment: 1,
+            },
+          },
+        });
+
+        await tx.todo.update({
+          where: { id },
+          data: {
+            title,
+            description,
+            state,
+            deadline,
+            label,
+            order,
+          },
+        });
+      } else if (isOrderIncreased) {
+        await tx.todo.updateMany({
+          where: {
+            ownerId: session!.user!.id,
+            state,
+            order: { gt: record.order, lte: order },
+          },
+          data: {
+            order: {
+              decrement: 1,
+            },
+          },
+        });
+
+        await tx.todo.update({
+          where: { id },
+          data: {
+            title,
+            description,
+            state,
+            deadline,
+            label,
+            order,
+          },
+        });
+      } else {
+        await tx.todo.updateMany({
+          where: {
+            ownerId: session!.user!.id,
+            state,
+            order: { lt: record.order, gte: order },
+          },
+          data: {
+            order: {
+              increment: 1,
+            },
+          },
+        });
+
+        await tx.todo.update({
+          where: { id },
+          data: {
+            title,
+            description,
+            state,
+            deadline,
+            label,
+            order,
+          },
+        });
+      }
+
+      const finalResult = await tx.todo.findMany({
         where: {
           ownerId: session!.user!.id,
-          state: record.state,
-          order: { gt: record.order },
+          isDeleted: false,
         },
-        data: {
-          order: {
-            decrement: 1,
-          },
+        orderBy: {
+          order: "asc",
         },
       });
 
-      await prisma.todo.updateMany({
-        where: {
-          ownerId: session!.user!.id,
-          state,
-          order: { gte: order },
-        },
-        data: {
-          order: {
-            increment: 1,
-          },
-        },
-      });
-
-      await prisma.todo.update({
-        where: { id },
-        data: {
-          title,
-          description,
-          state,
-          deadline,
-          label,
-          order,
-        },
-      });
-    } else if (isOrderIncreased) {
-      await prisma.todo.updateMany({
-        where: {
-          ownerId: session!.user!.id,
-          state,
-          order: { gt: record.order, lte: order },
-        },
-        data: {
-          order: {
-            decrement: 1,
-          },
-        },
-      });
-
-      await prisma.todo.update({
-        where: { id },
-        data: {
-          title,
-          description,
-          state,
-          deadline,
-          label,
-          order,
-        },
-      });
-    } else {
-      await prisma.todo.updateMany({
-        where: {
-          ownerId: session!.user!.id,
-          state,
-          order: { lt: record.order, gte: order },
-        },
-        data: {
-          order: {
-            increment: 1,
-          },
-        },
-      });
-
-      await prisma.todo.update({
-        where: { id },
-        data: {
-          title,
-          description,
-          state,
-          deadline,
-          label,
-          order,
-        },
-      });
-    }
-
-    const result = await prisma.todo.findMany({
-      where: {
-        ownerId: session!.user!.id,
-        isDeleted: false,
-      },
-      orderBy: {
-        order: "asc",
-      },
+      return finalResult;
     });
 
     return new Response(JSON.stringify(result), { status: 200 });
   } catch (error) {
     logger.error(error);
+    if (error instanceof Error && error.message === "Record Not Found") {
+      return new Response("Record Not Found", { status: 404 });
+    }
     return new Response("Internal Server Error", { status: 500 });
   }
 }

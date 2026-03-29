@@ -20,34 +20,38 @@ export async function POST(req) {
       label,
     } = TodoCreateValidator.parse(body);
 
-    const todoWithMaxOrderInSameState = await prisma.todo.findFirst({
-      where: {
-        ownerId: session.user.id,
-        state,
-        isDeleted: false,
-      },
-      orderBy: {
-        order: "desc",
-      },
-    });
-    const order = !todoWithMaxOrderInSameState
-      ? 1
-      : todoWithMaxOrderInSameState.order + 1;
+    const result = await prisma.$transaction(async (tx) => {
+      const todoWithMaxOrderInSameState = await tx.todo.findFirst({
+        where: {
+          ownerId: session.user?.id,
+          state,
+          isDeleted: false,
+        },
+        orderBy: {
+          order: "desc",
+        },
+      });
+      const order = !todoWithMaxOrderInSameState
+        ? 1
+        : todoWithMaxOrderInSameState.order + 1;
 
-    const result = await prisma.todo.create({
-      data: {
-        title,
-        description,
-        state,
-        label,
-        deadline,
-        order,
-        owner: {
-          connect: {
-            id: session.user.id,
+      const createdTodo = await tx.todo.create({
+        data: {
+          title,
+          description,
+          state,
+          label,
+          deadline,
+          order,
+          owner: {
+            connect: {
+              id: session.user?.id,
+            },
           },
         },
-      },
+      });
+
+      return createdTodo;
     });
 
     return new Response(JSON.stringify(result), { status: 200 });
